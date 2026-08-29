@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart PDF Editor</title>
+
+  <!-- Google Fonts (including Devanagari) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Serif+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Libraries (CDN) -->
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.210/pdf.min.js"></script>
+  <!-- pdf-lib -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.28.0/dist/pdf-lib.min.js"></script>
+  <!-- Fabric.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">Smart PDF Editor</div>
+      <div class="toolbar">
+        <input id="fileInput" type="file" accept="application/pdf" style="display:none">
+        <button id="openBtn" title="Open PDF">Open PDF</button>
+        <button id="undoBtn" title="Undo">Undo</button>
+        <button id="redoBtn" title="Redo">Redo</button>
+        <button id="selectToolBtn" title="Select">Select</button>
+        <button id="textToolBtn" title="Text Tool">Text</button>
+        <button id="editTextBtn" title="Edit Text">Edit Text</button>
+        <button id="eraseToolBtn" title="Erase">Eraser</button>
+        <button id="imageToolBtn" title="Image">Image</button>
+        <button id="drawToolBtn" title="Draw">Draw</button>
+        <button id="highlightToolBtn" title="Highlight">Highlight</button>
+        <button id="signatureToolBtn" title="Signature">Signature</button>
+
+        <select id="zoomSelect" title="Zoom">
+          <option value="fit">Fit</option>
+          <option value="50">50%</option>
+          <option value="75">75%</option>
+          <option value="100" selected>100%</option>
+          <option value="125">125%</option>
+          <option value="150">150%</option>
+          <option value="200">200%</option>
+        </select>
+
+        <button id="saveBtn" title="Save">Save</button>
+        <button id="downloadBtn" title="Download PDF">Download PDF</button>
+        <button id="printBtn" title="Print">Print</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="leftbar">
+        <div class="dropZone" id="dropZone">
+          <div class="dropText">Drag & Drop PDF here or click Open</div>
+        </div>
+        <div class="thumbnails" id="thumbs"></div>
+        <div class="pageActions">
+          <button id="addPageBtn">Add Page</button>
+          <button id="deletePageBtn">Delete Page</button>
+          <button id="duplicatePageBtn">Duplicate Page</button>
+          <button id="rotateLeftBtn">Rotate Left</button>
+          <button id="rotateRightBtn">Rotate Right</button>
+        </div>
+      </aside>
+
+      <section class="editorArea">
+        <div class="editorHeader">
+          <div id="pageInfo">No document loaded</div>
+          <div class="findReplace">
+            <input id="findInput" placeholder="Find" />
+            <input id="replaceInput" placeholder="Replace with" />
+            <button id="findBtn">Find</button>
+            <button id="replaceBtn">Replace</button>
+            <button id="replaceAllBtn">Replace All</button>
+          </div>
+        </div>
+
+        <div class="canvasWrap" id="canvasWrap">
+          <!-- PDF page canvas (rendered by pdf.js) -->
+          <canvas id="pdfCanvas"></canvas>
+          <!-- Fabric overlay is mounted on a canvas created by fabric -->
+          <div id="fabricContainer"></div>
+        </div>
+
+        <div class="editorFooter">
+          <div class="privacy">Your PDF is processed locally in your browser. Files are not uploaded to a server.</div>
+          <div class="error" id="errorMsg"></div>
+        </div>
+      </section>
+
+      <aside class="rightbar" id="rightbar">
+        <h3>Properties</h3>
+        <div class="props">
+          <div class="prop">
+            <label>Font</label>
+            <select id="fontFamily">
+              <option>Roboto</option>
+              <option>Arial</option>
+              <option>Times New Roman</option>
+              <option>Courier New</option>
+              <option>Georgia</option>
+              <option>Verdana</option>
+              <option>Tahoma</option>
+              <option>Helvetica</option>
+              <option>Noto Sans Devanagari</option>
+              <option>Noto Serif Devanagari</option>
+            </select>
+          </div>
+          <div class="prop">
+            <label>Font Size</label>
+            <input id="fontSize" type="number" min="6" max="200" value="18">
+          </div>
+          <div class="prop inline">
+            <button id="boldBtn">B</button>
+            <button id="italicBtn">I</button>
+            <button id="underlineBtn">U</button>
+          </div>
+          <div class="prop">
+            <label>Text Color</label>
+            <input id="textColor" type="color" value="#000000">
+          </div>
+          <div class="prop">
+            <label>Background Color</label>
+            <input id="bgColor" type="color" value="#ffffff">
+          </div>
+          <div class="prop">
+            <label>Opacity</label>
+            <input id="objOpacity" type="range" min="0.1" max="1" step="0.05" value="1">
+          </div>
+          <div class="prop">
+            <label>Letter Spacing (px)</label>
+            <input id="charSpacing" type="number" value="0">
+          </div>
+          <div class="prop">
+            <label>Line Height</label>
+            <input id="lineHeight" type="number" step="0.1" value="1.2">
+          </div>
+          <div class="prop">
+            <label>Alignment</label>
+            <select id="textAlign">
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+              <option value="justify">Justify</option>
+            </select>
+          </div>
+          <div class="prop">
+            <label>Position X</label>
+            <input id="posX" type="number" value="0">
+          </div>
+          <div class="prop">
+            <label>Position Y</label>
+            <input id="posY" type="number" value="0">
+          </div>
+
+          <hr/>
+          <div>
+            <button id="bringForwardBtn">Bring Forward</button>
+            <button id="sendBackwardBtn">Send Back</button>
+            <button id="deleteObjBtn">Delete Object</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
